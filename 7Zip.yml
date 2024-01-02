@@ -1,0 +1,80 @@
+# 7-Zip exe doesn't use a guid for the Product ID
+- name: Install 7zip from a network share with specific credentials
+  ansible.windows.win_package:
+    path: \\domain\programs\7z.exe
+    product_id: 7-Zip
+    arguments: /S
+    state: present
+  become: true
+  become_method: runas
+  become_flags: logon_type=new_credential logon_flags=netcredentials_only
+  vars:
+    ansible_become_user: DOMAIN\User
+    ansible_become_password: Password
+
+- name: Install 7zip and use a file version for the installation check
+  ansible.windows.win_package:
+    path: C:\temp\7z.exe
+    creates_path: C:\Program Files\7-Zip\7z.exe
+    creates_version: 16.04
+    state: present
+
+- name: Uninstall 7zip from the exe
+  ansible.windows.win_package:
+    path: C:\Program Files\7-Zip\Uninstall.exe
+    product_id: 7-Zip
+    arguments: /S
+    state: absent
+
+- name: Uninstall 7zip without specifying the path
+  ansible.windows.win_package:
+    product_id: 7-Zip
+    arguments: /S
+    state: absent
+
+
+    # Install/uninstall with chocolatey
+- name: Ensure 7-Zip is installed through Chocolatey
+  win_chocolatey:
+    name: 7zip
+    state: present
+
+- name: Ensure 7-Zip is not installed through Chocolatey
+  win_chocolatey:
+    name: 7zip
+    state: absent
+
+# Install/uninstall with win_package
+- name: Download the 7-Zip package
+  win_get_url:
+    url: https://www.7-zip.org/a/7z1701-x64.msi
+    dest: C:\temp\7z.msi
+
+- name: Ensure 7-Zip is installed through win_package
+  win_package:
+    path: C:\temp\7z.msi
+    state: present
+
+- name: Ensure 7-Zip is not installed through win_package
+  win_package:
+    path: C:\temp\7z.msi
+    state: absent
+
+# Install/uninstall with win_command
+- name: Download the 7-Zip package
+  win_get_url:
+    url: https://www.7-zip.org/a/7z1701-x64.msi
+    dest: C:\temp\7z.msi
+
+- name: Check if 7-Zip is already installed
+  win_reg_stat:
+    name: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{23170F69-40C1-2702-1701-000001000000}
+  register: 7zip_installed
+
+- name: Ensure 7-Zip is installed through win_command
+  win_command: C:\Windows\System32\msiexec.exe /i C:\temp\7z.msi /qn /norestart
+  when: 7zip_installed.exists == false
+
+- name: Ensure 7-Zip is uninstalled through win_command
+  win_command: C:\Windows\System32\msiexec.exe /x {23170F69-40C1-2702-1701-000001000000} /qn /norestart
+  when: 7zip_installed.exists == true

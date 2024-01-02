@@ -1,0 +1,14 @@
+# Install Gimp using a network share
+- name: Install Gimp from an exe 
+  hosts: all 
+ 
+  tasks:
+    - name: Download the Gimp installer
+      win_get_url:
+        url: 'https://download.gimp.org/gimp/v2.10/windows/gimp-2.10.36-setup.exe'
+        dest: 'C:\Temp\gimp-2.10.36-setup.exe'
+
+    - name: Install EXE
+      win_package: 
+        path: 'C:\Temp\gimp-2.10.36-setup.exe'
+        state: present
